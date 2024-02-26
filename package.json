@@ -2,10 +2,10 @@
   "name": "msc-scan-api",
   "version": "1.0.0",
   "description": "",
-  "main": "api/api.js",
+  "main": "api/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start":"node src/api/api.js"
+    "start":"node src/api/server.js"
 
   },
   "author": "",

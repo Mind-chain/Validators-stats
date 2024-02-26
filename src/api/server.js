@@ -1,8 +1,8 @@
 const ethers = require('ethers');
 const axios = require('axios');
-const { validator_abi } = require('./../abi/validator.js');
-const { erc20_abi } = require('./../abi/erc20.js');
-const { contracts, ws_rpc, blockcounterapi } = require('./../const');
+const { validator_abi } = require('../abi/validator.js');
+const { erc20_abi } = require('../abi/erc20.js');
+const { contracts, ws_rpc, blockcounterapi } = require('../const.js');
 
 const provider = new ethers.providers.WebSocketProvider(ws_rpc);
 const validatorContract = new ethers.Contract(contracts.validator, validator_abi, provider);
