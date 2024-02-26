@@ -90,7 +90,8 @@ app.get('/validators', async (req, res) => {
     try {
         console.log('Received HTTP request for validator data.');
         const validatorData = await fetchValidators();
-        res.json(validatorData);
+        const reversedValidatorData = validatorData.reverse(); // Reverse the array
+        res.json(reversedValidatorData);
     } catch (error) {
         console.error('Error fetching validator data:', error);
         res.status(500).json({ error: 'Internal server error' });
