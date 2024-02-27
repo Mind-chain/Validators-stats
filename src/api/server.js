@@ -15,7 +15,11 @@ const rewardTokenContract = new ethers.Contract(contracts.Pmind, erc20_abi, prov
 
 const db = level('./data'); // Initialize LevelDB database
 
-async function fetchValidatorData(validator) {
+// Cache for storing validator data
+const validatorCache = new Map();
+
+// Fetches validator data and updates cache
+async function fetchAndUpdateValidatorData(validator) {
     try {
         const [stake, rewards, statusData, counterData] = await Promise.all([
             validatorContract.accountStake(validator),
@@ -36,8 +40,8 @@ async function fetchValidatorData(validator) {
             validatedBlocksStatus: validatedBlocksStatus,
         };
 
-        // Store data in LevelDB
-        await db.put(validator, JSON.stringify(data));
+        // Store data in cache
+        validatorCache.set(validator, data);
 
         return data;
     } catch (error) {
@@ -46,10 +50,10 @@ async function fetchValidatorData(validator) {
     }
 }
 
-async function fetchValidators() {
+// Fetches validators data in parallel
+async function fetchValidatorsData(validators) {
     try {
-        const validators = await validatorContract.validators();
-        const validatorData = await Promise.all(validators.map(fetchValidatorData));
+        const validatorData = await Promise.all(validators.map(fetchAndUpdateValidatorData));
         return validatorData;
     } catch (error) {
         console.error('Error fetching validators:', error);
@@ -57,11 +61,12 @@ async function fetchValidators() {
     }
 }
 
-// Listen for new blocks
+// Listen for new blocks and update validator data
 provider.on('block', async (blockNumber) => {
     try {
         console.log(`New block received: ${blockNumber}, updating data...`);
-        await fetchValidators();
+        const validators = await validatorContract.validators();
+        await fetchValidatorsData(validators);
     } catch (error) {
         console.error('Error updating validator data:', error);
     }
@@ -71,7 +76,8 @@ provider.on('block', async (blockNumber) => {
 async function initialFetchAndStore() {
     try {
         console.log('Initial fetch and store...');
-        await fetchValidators();
+        const validators = await validatorContract.validators();
+        await fetchValidatorsData(validators);
     } catch (error) {
         console.error('Error fetching and storing initial validator data:', error);
     }
@@ -89,9 +95,8 @@ app.use((req, res, next) => {
 app.get('/validators', async (req, res) => {
     try {
         console.log('Received HTTP request for validator data.');
-        const validatorData = await fetchValidators();
-        const reversedValidatorData = validatorData.reverse(); // Reverse the array
-        res.json(reversedValidatorData);
+        const validatorData = Array.from(validatorCache.values()).reverse();
+        res.json(validatorData);
     } catch (error) {
         console.error('Error fetching validator data:', error);
         res.status(500).json({ error: 'Internal server error' });
