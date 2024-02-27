@@ -3,7 +3,7 @@ const contracts = {
     Pmind : "0x75E218790B76654A5EdA1D0797B46cBC709136b0"
 }
 const ws_rpc = "wss://seednode.mindchain.info/ws"
-const blockcounterapi = "https://mainnet.mindscan.info/api/v2/addresses/"
+const blockcounterapi = "http://91.208.92.77:3000/api/v2/addresses/"
 
 module.exports = {
     contracts,
