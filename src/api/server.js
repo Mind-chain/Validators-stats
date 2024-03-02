@@ -31,9 +31,13 @@ async function fetchAndUpdateValidatorData(validator) {
         const validatedBlocksStatus = statusData.data.has_validated_blocks ? "active" : "inactive";
         const validatedBlocksCount = counterData.data.validations_count || 0; // Default to 0 if no data is available
 
+        // Fetch the human-readable name from the database
+        const name = await db.get(validator).catch(() => null);
+
         // Prepare data for storage
         const data = {
             address: validator,
+            name: name || '', // If no name is found, default to an empty string
             stake: ethers.utils.formatEther(stake) + " MIND",
             rewards: ethers.utils.formatEther(rewards) + " PMIND",
             validatedBlocksCount: validatedBlocksCount,
@@ -91,11 +95,29 @@ app.use((req, res, next) => {
     next();
 });
 
-// API endpoint
+// Middleware to parse JSON data in the request body
+app.use(express.json());
+
+// API endpoint to add human-readable names for addresses
+app.post('/addName', async (req, res) => {
+    try {
+        const { address, name } = req.body;
+        await db.put(address, name);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error adding name for address:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// API endpoint to fetch validator data
 app.get('/validators', async (req, res) => {
     try {
         console.log('Received HTTP request for validator data.');
-        const validatorData = Array.from(validatorCache.values()).reverse();
+        const validatorData = Array.from(validatorCache.values()).map(validator => {
+            const { address, name, stake, rewards, validatedBlocksCount, validatedBlocksStatus } = validator;
+            return { address, name, stake, rewards, validatedBlocksCount, validatedBlocksStatus };
+        }).reverse();
         res.json(validatorData);
     } catch (error) {
         console.error('Error fetching validator data:', error);
