@@ -7,7 +7,7 @@ const { erc20_abi } = require('../abi/erc20.js');
 const { contracts, ws_rpc, blockcounterapi } = require('../const.js');
 
 const app = express();
-const port = 3000;
+const port = 9000;
 
 const provider = new ethers.providers.WebSocketProvider(ws_rpc);
 const validatorContract = new ethers.Contract(contracts.validator, validator_abi, provider);
