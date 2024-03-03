@@ -161,10 +161,10 @@ async function fetchTotalStakedAmount() {
 //     }
 // });
 // Contract address for BlockchainInfo
-const blockchainInfoAddress = '0xa35fe650cC2A4F2024A73bA7f76bF7FBad64101F';
+
 
 // Contract instance for BlockchainInfo
-const blockchainInfoContract = new ethers.Contract(blockchainInfoAddress, cns_abi, provider);
+const blockchainInfoContract = new ethers.Contract(contracts.blockchainInfoAddress, cns_abi, provider);
 
 // Function to fetch current block epoch from BlockchainInfo contract
 async function fetchCurrentBlockEpoch() {
