@@ -177,32 +177,39 @@ async function fetchCurrentBlockEpoch() {
     }
 }
 
+// Function to count total validator addresses from LevelDB
+async function countTotalValidatorAddresses() {
+    try {
+        const validatorAddresses = new Set(); // Using a Set to ensure uniqueness of addresses
+        
+        // Iterate through cached validator data
+        for (const validatorData of validatorCache.values()) {
+            validatorAddresses.add(validatorData.address);
+        }
 
-// app.get('/currentBlockEpoch', async (req, res) => {
-//     try {
-//         console.log('Received HTTP request for current block epoch.');
-//         const currentBlockEpochHex = await fetchCurrentBlockEpoch();
-//         const currentBlockEpochDec = parseInt(currentBlockEpochHex, 16).toString();
-//         res.json({ currentBlockEpoch: currentBlockEpochDec });
-//     } catch (error) {
-//         console.error('Error fetching current block epoch:', error);
-//         res.status(500).json({ error: 'Internal server error' });
-//     }
-// });
-// Combined endpoint for current block epoch and total staked amount
+        const totalAddresses = validatorAddresses.size;
+        console.log('Total validator addresses counted:', totalAddresses);
+        
+        return totalAddresses;
+    } catch (error) {
+        console.error('Error counting total validator addresses:', error);
+        throw error;
+    }
+}
+
 app.get('/chaindata', async (req, res) => {
     try {
         console.log('Received HTTP request for chain data.');
         const currentBlockEpochHex = await fetchCurrentBlockEpoch();
         const currentBlockEpochDec = parseInt(currentBlockEpochHex, 16).toString();
         const totalStakedAmount = await fetchTotalStakedAmount();
-        res.json({ currentBlockEpoch: currentBlockEpochDec, totalStakedAmount });
+        const totalValidatorAddresses = await countTotalValidatorAddresses();
+        res.json({ currentBlockEpoch: currentBlockEpochDec, totalStakedAmount, totalValidatorAddresses });
     } catch (error) {
         console.error('Error fetching chain data:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
 
 // Start server
 app.listen(port, () => {
