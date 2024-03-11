@@ -4,13 +4,15 @@ const level = require('level');
 const express = require('express');
 const { validator_abi } = require('../abi/validator.js');
 const { erc20_abi } = require('../abi/erc20.js');
-const { contracts, ws_rpc, blockcounterapi } = require('../const.js');
+const { contracts, ws_rpc,http_rpc, blockcounterapi } = require('../const.js');
 const {cns_abi} = require('../abi/cns_abi.js');
 
 const app = express();
 const port = 8000;
 
-const provider = new ethers.providers.WebSocketProvider(ws_rpc);
+const provider = new ethers.providers.JsonRpcProvider(http_rpc);
+const st_provider =  new ethers.providers.WebSocketProvider(ws_rpc)
+
 const validatorContract = new ethers.Contract(contracts.validator, validator_abi, provider);
 const rewardTokenContract = new ethers.Contract(contracts.Pmind, erc20_abi, provider);
 
@@ -164,7 +166,7 @@ async function fetchTotalStakedAmount() {
 
 
 // Contract instance for BlockchainInfo
-const blockchainInfoContract = new ethers.Contract(contracts.blockchainInfoAddress, cns_abi, provider);
+const blockchainInfoContract = new ethers.Contract(contracts.blockchainInfoAddress, cns_abi, st_provider);
 
 // Function to fetch current block epoch from BlockchainInfo contract
 async function fetchCurrentBlockEpoch() {
