@@ -4,10 +4,12 @@ const contracts = {
     blockchainInfoAddress: "0xa35fe650cC2A4F2024A73bA7f76bF7FBad64101F"
 }
 const ws_rpc = "wss://seednode.mindchain.info/ws"
+const http_rpc = "https://seednode.mindchain.info";
 const blockcounterapi = "http://91.208.92.77:3000/api/v2/addresses/"
 
 module.exports = {
     contracts,
     ws_rpc,
+    http_rpc,
     blockcounterapi
 }
