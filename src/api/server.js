@@ -24,15 +24,13 @@ const validatorCache = new Map();
 // Fetches validator data and updates cache
 async function fetchAndUpdateValidatorData(validator) {
     try {
-        const [stake, rewards, statusData, counterData] = await Promise.all([
+        const [stake, rewards, statusData] = await Promise.all([
             validatorContract.accountStake(validator),
             rewardTokenContract.balanceOf(validator),
-            axios.get(`${blockcounterapi}${validator}`),
-            axios.get(`${blockcounterapi}${validator}/counters`)
+            axios.get(`${blockcounterapi}${validator}`)
         ]);
 
         const validatedBlocksStatus = statusData.data.has_validated_blocks ? "active" : "inactive";
-        const validatedBlocksCount = counterData.data.validations_count || 0; // Default to 0 if no data is available
 
         // Fetch the human-readable name from the database
         const name = await db.get(validator).catch(() => null);
@@ -43,7 +41,7 @@ async function fetchAndUpdateValidatorData(validator) {
             name: name || '', // If no name is found, default to an empty string
             stake: ethers.utils.formatEther(stake) + " MIND",
             rewards: ethers.utils.formatEther(rewards) + " PMIND",
-            validatedBlocksCount: validatedBlocksCount,
+            validatedBlocksCount: statusData.data.validations_count || 0, // Default to 0 if no data is available
             validatedBlocksStatus: validatedBlocksStatus,
         };
 
@@ -154,7 +152,7 @@ const blockchainInfoContract = new ethers.Contract(contracts.blockchainInfoAddre
 async function fetchCurrentBlockEpoch() {
     try {
         const currentBlockEpoch = await blockchainInfoContract.getCurrentBlockEpoch();
-        return currentBlockEpoch;
+        return parseInt(currentBlockEpoch, 16).toString();
     } catch (error) {
         console.error('Error fetching current block epoch:', error);
         throw error;
@@ -176,11 +174,10 @@ async function countTotalValidatorAddresses() {
 app.get('/chaindata', async (req, res) => {
     try {
         console.log('Received HTTP request for chain data.');
-        const currentBlockEpochHex = await fetchCurrentBlockEpoch();
-        const currentBlockEpochDec = parseInt(currentBlockEpochHex, 16).toString();
+        const currentBlockEpoch = await fetchCurrentBlockEpoch();
         const totalStakedAmount = await fetchTotalStakedAmount();
         const totalValidatorAddresses = await countTotalValidatorAddresses();
-        res.json({ currentBlockEpoch: currentBlockEpochDec, totalStakedAmount, totalValidatorAddresses });
+        res.json({ currentBlockEpoch, totalStakedAmount, totalValidatorAddresses });
     } catch (error) {
         console.error('Error fetching chain data:', error);
         res.status(500).json({ error: 'Internal server error' });
