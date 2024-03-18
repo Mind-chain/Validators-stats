@@ -1,20 +1,20 @@
-const ethers = require('ethers');
 const axios = require('axios');
+const ethers = require('ethers');
 const level = require('level');
 const express = require('express');
+const WebSocket = require('ws');
 const { validator_abi } = require('../abi/validator.js');
 const { erc20_abi } = require('../abi/erc20.js');
-const { contracts, ws_rpc,http_rpc, blockcounterapi } = require('../const.js');
-const {cns_abi} = require('../abi/cns_abi.js');
+const { contracts, ws_rpc, blockcounterapi } = require('../const.js');
+const { cns_abi } = require('../abi/cns_abi.js');
 
 const app = express();
 const port = 8000;
 
-const provider = new ethers.providers.JsonRpcProvider(http_rpc);
-const st_provider =  new ethers.providers.WebSocketProvider(ws_rpc)
+const st_provider = new ethers.providers.WebSocketProvider(ws_rpc);
 
-const validatorContract = new ethers.Contract(contracts.validator, validator_abi, provider);
-const rewardTokenContract = new ethers.Contract(contracts.Pmind, erc20_abi, provider);
+const validatorContract = new ethers.Contract(contracts.validator, validator_abi, st_provider);
+const rewardTokenContract = new ethers.Contract(contracts.Pmind, erc20_abi, st_provider);
 
 const db = level('./data'); // Initialize LevelDB database
 
@@ -69,7 +69,7 @@ async function fetchValidatorsData(validators) {
 }
 
 // Listen for new blocks and update validator data
-provider.on('block', async (blockNumber) => {
+st_provider.on('block', async (blockNumber) => {
     try {
         console.log(`New block received: ${blockNumber}, updating data...`);
         const validators = await validatorContract.validators();
@@ -101,7 +101,6 @@ app.use((req, res, next) => {
 // Middleware to parse JSON data in the request body
 app.use(express.json());
 
-
 // API endpoint to add human-readable names for addresses
 app.post('/addName', async (req, res) => {
     try {
@@ -122,7 +121,6 @@ app.post('/addName', async (req, res) => {
     }
 });
 
-
 // API endpoint to fetch validator data
 app.get('/validators', async (req, res) => {
     try {
@@ -138,7 +136,6 @@ app.get('/validators', async (req, res) => {
     }
 });
 
-
 // Function to fetch total staked amount directly from the contract
 async function fetchTotalStakedAmount() {
     try {
@@ -149,21 +146,6 @@ async function fetchTotalStakedAmount() {
         throw error;
     }
 }
-
-
-// API endpoint to fetch total staked amount
-// app.get('/totalStakedAmount', async (req, res) => {
-//     try {
-//         console.log('Received HTTP request for total staked amount.');
-//         const totalStakedAmount = await fetchTotalStakedAmount();
-//         res.json({ totalStakedAmount });
-//     } catch (error) {
-//         console.error('Error fetching total staked amount:', error);
-//         res.status(500).json({ error: 'Internal server error' });
-//     }
-// });
-// Contract address for BlockchainInfo
-
 
 // Contract instance for BlockchainInfo
 const blockchainInfoContract = new ethers.Contract(contracts.blockchainInfoAddress, cns_abi, st_provider);
@@ -182,16 +164,8 @@ async function fetchCurrentBlockEpoch() {
 // Function to count total validator addresses from LevelDB
 async function countTotalValidatorAddresses() {
     try {
-        const validatorAddresses = new Set(); // Using a Set to ensure uniqueness of addresses
-        
-        // Iterate through cached validator data
-        for (const validatorData of validatorCache.values()) {
-            validatorAddresses.add(validatorData.address);
-        }
-
-        const totalAddresses = validatorAddresses.size;
+        const totalAddresses = validatorCache.size;
         console.log('Total validator addresses counted:', totalAddresses);
-        
         return totalAddresses;
     } catch (error) {
         console.error('Error counting total validator addresses:', error);
